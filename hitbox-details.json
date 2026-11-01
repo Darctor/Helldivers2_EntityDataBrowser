@@ -1,0 +1,305 @@
+{
+  "version": 5,
+  "entities": {
+    "0x905809A4C28D8A45": {
+      "name": "Crusher",
+      "name_zh": "粉碎者",
+      "zones": {
+        "1": {
+          "name_zh": "头盔",
+          "note_zh": "",
+          "name_en": "",
+          "note_en": ""
+        },
+        "2": {
+          "name_zh": "头",
+          "note_zh": "",
+          "name_en": "",
+          "note_en": ""
+        },
+        "3": {
+          "name_zh": "上躯干",
+          "note_zh": "",
+          "name_en": "",
+          "note_en": ""
+        },
+        "4": {
+          "name_zh": "左臂",
+          "note_zh": "",
+          "name_en": "",
+          "note_en": ""
+        },
+        "5": {
+          "name_zh": "右臂",
+          "note_zh": "",
+          "name_en": "",
+          "note_en": ""
+        },
+        "6": {
+          "name_zh": "裆部",
+          "note_zh": "",
+          "name_en": "",
+          "note_en": ""
+        },
+        "7": {
+          "name_zh": "左腿",
+          "note_zh": "",
+          "name_en": "",
+          "note_en": ""
+        },
+        "8": {
+          "name_zh": "右腿",
+          "note_zh": "",
+          "name_en": "",
+          "note_en": ""
+        }
+      }
+    },
+    "0xBC242702FB46B7E7": {
+      "name": "Vox Engine",
+      "name_zh": "噪轰引擎",
+      "zones": {
+        "1": {
+          "name_zh": "车座",
+          "note_zh": "",
+          "name_en": "",
+          "note_en": ""
+        },
+        "2": {
+          "name_zh": "左喇叭",
+          "note_zh": "",
+          "name_en": "",
+          "note_en": ""
+        },
+        "3": {
+          "name_zh": "右喇叭",
+          "note_zh": "",
+          "name_en": "",
+          "note_en": ""
+        },
+        "4": {
+          "name_zh": "头部挡板1",
+          "note_zh": "",
+          "name_en": "",
+          "note_en": ""
+        },
+        "5": {
+          "name_zh": "头部挡板2",
+          "note_zh": "",
+          "name_en": "",
+          "note_en": ""
+        },
+        "6": {
+          "name_zh": "裙板1",
+          "note_zh": "",
+          "name_en": "",
+          "note_en": ""
+        },
+        "7": {
+          "name_zh": "裙板2",
+          "note_zh": "",
+          "name_en": "",
+          "note_en": ""
+        },
+        "8": {
+          "name_zh": "裙板3",
+          "note_zh": "",
+          "name_en": "",
+          "note_en": ""
+        },
+        "9": {
+          "name_zh": "裙板4",
+          "note_zh": "",
+          "name_en": "",
+          "note_en": ""
+        },
+        "10": {
+          "name_zh": "履带 负重轮1",
+          "note_zh": "",
+          "name_en": "",
+          "note_en": ""
+        },
+        "11": {
+          "name_zh": "履带 负重轮2",
+          "note_zh": "",
+          "name_en": "",
+          "note_en": ""
+        },
+        "12": {
+          "name_zh": "履带 负重轮3",
+          "note_zh": "",
+          "name_en": "",
+          "note_en": ""
+        },
+        "13": {
+          "name_zh": "履带 负重轮4",
+          "note_zh": "",
+          "name_en": "",
+          "note_en": ""
+        },
+        "14": {
+          "name_zh": "头部散热器 左",
+          "note_zh": "",
+          "name_en": "",
+          "note_en": ""
+        },
+        "15": {
+          "name_zh": "头部散热器 中",
+          "note_zh": "",
+          "name_en": "",
+          "note_en": ""
+        },
+        "16": {
+          "name_zh": "头部散热器 右",
+          "note_zh": "",
+          "name_en": "",
+          "note_en": ""
+        },
+        "17": {
+          "name_zh": "左眼",
+          "note_zh": "",
+          "name_en": "",
+          "note_en": ""
+        },
+        "18": {
+          "name_zh": "头部弹射舱",
+          "note_zh": "有BUG，实际上致命并没有生效，血量耗尽后由头接管hitbox",
+          "name_en": "",
+          "note_en": ""
+        },
+        "19": {
+          "name_zh": "底盘散热器",
+          "note_zh": "",
+          "name_en": "",
+          "note_en": ""
+        },
+        "20": {
+          "name_zh": "右眼",
+          "note_zh": "",
+          "name_en": "",
+          "note_en": ""
+        },
+        "21": {
+          "name_zh": "尾部散热器 左",
+          "note_zh": "",
+          "name_en": "",
+          "note_en": ""
+        },
+        "22": {
+          "name_zh": "尾部散热器 右",
+          "note_zh": "",
+          "name_en": "",
+          "note_en": ""
+        },
+        "23": {
+          "name_zh": "榴弹发射器 左",
+          "note_zh": "",
+          "name_en": "",
+          "note_en": ""
+        },
+        "24": {
+          "name_zh": "榴弹发射器 右",
+          "note_zh": "",
+          "name_en": "",
+          "note_en": ""
+        },
+        "25": {
+          "name_zh": "头部",
+          "note_zh": "",
+          "name_en": "Head",
+          "note_en": ""
+        },
+        "default": {
+          "name_zh": "main",
+          "note_zh": "",
+          "name_en": "",
+          "note_en": ""
+        }
+      }
+    },
+    "0x611BA777783B08A2": {
+      "name": "Vox Engine Cannon Turret",
+      "name_zh": "噪轰引擎 速射加农炮",
+      "zones": {
+        "1": {
+          "name_zh": "炮身",
+          "note_zh": "",
+          "name_en": "body",
+          "note_en": ""
+        }
+      }
+    },
+    "0xCC188F0C80505C6C": {
+      "name": "Wretch",
+      "name_zh": "悲怜体",
+      "zones": {
+        "1": {
+          "name_zh": "左爪",
+          "note_zh": "",
+          "name_en": "Left Claw",
+          "note_en": ""
+        },
+        "2": {
+          "name_zh": "左爪上臂",
+          "note_zh": "",
+          "name_en": "Left Claw Upper Arm",
+          "note_en": ""
+        },
+        "3": {
+          "name_zh": "右爪",
+          "note_zh": "",
+          "name_en": "Right Claw",
+          "note_en": ""
+        },
+        "4": {
+          "name_zh": "右爪上臂",
+          "note_zh": "",
+          "name_en": "Right Claw Upper Arm",
+          "note_en": ""
+        },
+        "5": {
+          "name_zh": "左手",
+          "note_zh": "两条手臂同时摧毁会直接死亡",
+          "name_en": "Left Arm",
+          "note_en": "Kill the entity when both arms are destroyed"
+        },
+        "6": {
+          "name_zh": "右手",
+          "note_zh": "",
+          "name_en": "Right Arm",
+          "note_en": ""
+        },
+        "7": {
+          "name_zh": "左腿",
+          "note_zh": "",
+          "name_en": "Left Leg",
+          "note_en": ""
+        },
+        "8": {
+          "name_zh": "右腿",
+          "note_zh": "",
+          "name_en": "Right Leg",
+          "note_en": ""
+        },
+        "9": {
+          "name_zh": "头",
+          "note_zh": "摧毁后有12s的亡语，会前进并持续挥砍",
+          "name_en": "Head",
+          "note_en": "Destroying it triggers a 12s deathrattle, during which it will advance and continuously slash."
+        },
+        "10": {
+          "name_zh": "躯干",
+          "note_zh": "",
+          "name_en": "Torso",
+          "note_en": ""
+        },
+        "default": {
+          "name_zh": "main",
+          "note_zh": "",
+          "name_en": "",
+          "note_en": ""
+        }
+      }
+    }
+  }
+}

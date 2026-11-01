@@ -1,0 +1,9 @@
+.trae/
+.trae-html-share-packages/
+.screenshots/
+.devin/
+.idea/
+__pycache__/
+prompt/
+exports/
+tools/

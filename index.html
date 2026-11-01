@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="绝地潜兵 2 实体数据浏览器">
+  <title>HELLDIVERS 2 // 实体数据浏览器</title>
+  <link rel="stylesheet" href="css/styles.css?v=3">
+  <script>
+    // 首屏绘制前定主题：手动选择优先，否则跟随系统；任何异常都回退深色。
+    try {
+      var savedTheme = localStorage.getItem("helldivers2-theme");
+      document.documentElement.dataset.theme = (savedTheme === "light" || savedTheme === "dark")
+        ? savedTheme
+        : (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+    } catch (e) {
+      document.documentElement.dataset.theme = "dark";
+    }
+  </script>
+</head>
+<body>
+  <header class="masthead">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <div class="brand-text">
+        <p class="eyebrow">SUPER EARTH // HELLDIVERS 2 ARCHIVE</p>
+        <h1 data-i18n="pageTitle">实体数据浏览器</h1>
+      </div>
+      <p id="data-version" class="data-version"></p>
+    </div>
+    <div class="masthead-actions">
+      <div id="load-status" class="load-status is-loading" role="status">正在载入作战档案…</div>
+      <button id="mode-toggle" class="language-toggle" type="button" data-i18n="viewRawData">查看原始数据</button>
+      <button id="theme-toggle" class="language-toggle" type="button">浅色</button>
+      <button id="language-toggle" class="language-toggle" type="button">EN</button>
+    </div>
+  </header>
+
+  <main class="page-shell">
+    <div id="browser-view">
+    <section class="control-panel" aria-label="实体选择">
+      <div class="console-main">
+        <div class="field field-search">
+          <label for="entity-search" data-i18n="searchEntity">搜索实体</label>
+          <input id="entity-search" type="search" placeholder="输入哈希、中文名或英文名" data-i18n-placeholder="searchPlaceholder" disabled autocomplete="off">
+          <p id="search-result" class="hint">输入内容后会自动切换至第一个匹配实体。</p>
+        </div>
+        <div class="field field-picker select-row">
+          <label for="entity-picker-trigger" data-i18n="entityList">实体列表</label>
+          <div class="entity-picker">
+            <button id="entity-picker-trigger" class="entity-picker-trigger" type="button" disabled aria-expanded="false">
+              正在读取 Hash.csv…
+            </button>
+            <div id="entity-picker-menu" class="entity-picker-menu" hidden></div>
+          </div>
+          <select id="entity-select" class="native-select" disabled aria-hidden="true" tabindex="-1">
+            <option>正在读取 HealthComponentData…</option>
+          </select>
+        </div>
+        <div class="field field-hash">
+          <label for="manual-hash" data-i18n="manualHash">手动哈希读取</label>
+          <div class="hash-input-group">
+            <input id="manual-hash" type="text" placeholder="输入哈希值" data-i18n-placeholder="manualHashPlaceholder" autocomplete="off">
+            <button id="hash-format-toggle" class="file-button" type="button">HEX</button>
+            <button id="read-manual-hash" class="file-button is-primary" type="button" data-i18n="readEntity">开始读取</button>
+          </div>
+          <p id="manual-hash-result" class="hint"></p>
+        </div>
+      </div>
+      <div class="console-tools local-only">
+        <span class="tools-label">DATA LINK</span>
+        <div class="tools-buttons">
+          <button id="select-entities-folder" class="file-button" type="button" data-i18n="selectEntities">选择数据文件夹</button>
+          <input id="data-folder" type="file" webkitdirectory multiple accept=".json">
+          <button id="authorize-folders" class="file-button" type="button">授权最近使用的文件夹</button>
+          <button id="select-config-folder" class="file-button" type="button">选择 web 文件夹</button>
+          <button id="save-hitbox-config" class="file-button" type="button" disabled>保存部位配置</button>
+        </div>
+        <p class="hint tools-hint" data-i18n="localHint">选择含 entities、settings、entity_deltas 和 Hash.csv 的目录。Dump_&lt;日期&gt; 或已发布的 Data 目录都可以。文件名优先用不带日期的；带日期时必须和 site-config.js 的 patch_date 一致。授权会记住。</p>
+        <p id="name-config-status" class="hint tools-hint">部位名称与备注按“实体哈希 + 索引 + 语言”保存在 hitbox-details.json。</p>
+      </div>
+    </section>
+
+    <section id="empty-state" class="empty-state">
+      <span class="radar" aria-hidden="true"></span>
+      <p data-i18n="waitingData">等待作战档案载入。</p>
+    </section>
+
+    <div class="wiki-layout">
+      <nav id="section-nav" class="wiki-toc" hidden aria-label="组件目录"></nav>
+
+    <div id="entity-details" hidden>
+      <section class="entity-banner">
+        <div class="banner-main">
+          <div class="banner-tags">
+            <span class="banner-stamp">ENTITY DOSSIER</span>
+            <span id="entity-category" class="banner-category" hidden></span>
+          </div>
+          <h2 id="entity-name">—</h2>
+          <p id="entity-name-en" class="entity-name-en">—</p>
+        </div>
+        <div class="banner-meta">
+          <span class="meta-label">FILE No.</span>
+          <code id="entity-hash">—</code>
+          <span id="entity-component-count" class="banner-count"></span>
+        </div>
+      </section>
+
+      <section class="data-section" id="data-chain-section" hidden>
+        <div class="section-heading">
+          <p class="section-index">DC</p>
+          <h2 data-i18n="dataChain">数据链（引用递归展开）</h2>
+          <button class="collapse-toggle" type="button" aria-expanded="true" data-i18n="collapse">折叠</button>
+          <span class="section-note"><span data-i18n="dataChainNote">从组件读到的有效枚举引用出发，递归展开 settings 表中的嵌套数据。</span> <span class="section-warn" data-i18n="dataChainWarn">游戏并不一定会使用每一条数据，请以实际情况为准。</span></span>
+        </div>
+        <div class="section-body">
+          <div id="data-chain-content"></div>
+        </div>
+      </section>
+
+      <section class="data-section" data-component="HealthComponentData">
+        <div class="section-heading">
+          <p class="section-index">01</p>
+          <h2 data-i18n="healthComponentData">HealthComponentData（生命值相关数据）</h2>
+          <button class="collapse-toggle" type="button" aria-expanded="true" data-i18n="collapse">折叠</button>
+          <span class="section-note">HealthComponentData</span>
+        </div>
+        <div class="section-body">
+          <div id="health-component-data-no-data" class="no-data" hidden></div>
+          <div id="health-component-data-content">
+            <div id="main-stats" class="stat-grid"></div>
+            <div class="subpanel">
+              <h3 data-i18n="hitboxStats">受击部位统计</h3>
+              <div id="hitbox-table"></div>
+            </div>
+            <div class="subpanel">
+              <h3 data-i18n="elementDamage">元素伤害倍率</h3>
+              <div id="element-damage-table"></div>
+            </div>
+            <div class="subpanel">
+              <h3 data-i18n="deathSettings">死亡与破坏设置</h3>
+              <div id="death-settings-table"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="hit-react-component-data-section" class="data-section" data-component="HitReactComponentData">
+        <div class="section-heading">
+          <p class="section-index">02</p>
+          <h2 data-i18n="hitReactComponentData">HitReactComponentData（受击反应）</h2>
+          <button class="collapse-toggle" type="button" aria-expanded="true" data-i18n="collapse">折叠</button>
+          <span class="section-note">HitReactComponentData</span>
+        </div>
+        <div class="section-body">
+          <div id="hit-react-component-data-content"></div>
+        </div>
+      </section>
+
+      <section id="status-effect-receiver-component-data-section" class="data-section" data-component="StatusEffectReceiverComponentData">
+        <div class="section-heading">
+          <p class="section-index">03</p>
+          <h2 data-i18n="statusEffectReceiverComponentData">StatusEffectReceiverComponentData（状态效果接收器）</h2>
+          <button class="collapse-toggle" type="button" aria-expanded="true" data-i18n="collapse">折叠</button>
+          <span class="section-note">StatusEffectReceiverComponentData</span>
+        </div>
+        <div class="section-body">
+          <div id="status-effect-receiver-component-data-content"></div>
+        </div>
+      </section>
+
+      <section id="mount-component-data-section" class="data-section" data-component="MountComponentData">
+        <div class="section-heading">
+          <p class="section-index">04</p>
+          <h2 data-i18n="mountComponentData">MountComponentData（挂载点）</h2>
+          <button class="collapse-toggle" type="button" aria-expanded="true" data-i18n="collapse">折叠</button>
+          <span class="section-note">MountComponentData</span>
+        </div>
+        <div class="section-body">
+          <div id="mount-component-data-content"></div>
+        </div>
+      </section>
+
+      <section class="data-section" data-component="ArcWeaponComponentData">
+        <div class="section-heading">
+          <p class="section-index">05</p>
+          <h2 data-i18n="arcWeaponComponentData">ArcWeaponComponentData（电弧武器数据）</h2>
+          <button class="collapse-toggle" type="button" aria-expanded="true" data-i18n="collapse">折叠</button>
+          <span class="section-note">ArcWeaponComponentData</span>
+        </div>
+        <div class="section-body"><div id="arc-weapon-component-data-content"></div></div>
+      </section>
+      <section class="data-section" data-component="BeamWeaponComponentData">
+        <div class="section-heading">
+          <p class="section-index">06</p>
+          <h2 data-i18n="beamWeaponComponentData">BeamWeaponComponentData（激光武器数据）</h2>
+          <button class="collapse-toggle" type="button" aria-expanded="true" data-i18n="collapse">折叠</button>
+          <span class="section-note">BeamWeaponComponentData</span>
+        </div>
+        <div class="section-body"><div id="beam-weapon-component-data-content"></div></div>
+      </section>
+      <section class="data-section" data-component="BombardmentComponentData">
+        <div class="section-heading">
+          <p class="section-index">07</p>
+          <h2 data-i18n="bombardmentComponentData">BombardmentComponentData（轰炸数据）</h2>
+          <button class="collapse-toggle" type="button" aria-expanded="true" data-i18n="collapse">折叠</button>
+          <span class="section-note">BombardmentComponentData</span>
+        </div>
+        <div class="section-body"><div id="bombardment-component-data-content"></div></div>
+      </section>
+      <section class="data-section" data-component="DamageZoneShieldComponentData">
+        <div class="section-heading">
+          <p class="section-index">08</p>
+          <h2 data-i18n="damageZoneShieldComponentData">DamageZoneShieldComponentData（部位护盾数据）</h2>
+          <button class="collapse-toggle" type="button" aria-expanded="true" data-i18n="collapse">折叠</button>
+          <span class="section-note">DamageZoneShieldComponentData</span>
+        </div>
+        <div class="section-body"><div id="damage-zone-shield-component-data-content"></div></div>
+      </section>
+      <section class="data-section" data-component="DepositComponentData">
+        <div class="section-heading">
+          <p class="section-index">09</p>
+          <h2 data-i18n="depositComponentData">DepositComponentData（存放数据）</h2>
+          <button class="collapse-toggle" type="button" aria-expanded="true" data-i18n="collapse">折叠</button>
+          <span class="section-note">DepositComponentData</span>
+        </div>
+        <div class="section-body"><div id="deposit-component-data-content"></div></div>
+      </section>
+      <section class="data-section" data-component="EagleComponentData">
+        <div class="section-heading">
+          <p class="section-index">10</p>
+          <h2 data-i18n="eagleComponentData">EagleComponentData（飞鹰数据）</h2>
+          <button class="collapse-toggle" type="button" aria-expanded="true" data-i18n="collapse">折叠</button>
+          <span class="section-note">EagleComponentData</span>
+        </div>
+        <div class="section-body"><div id="eagle-component-data-content"></div></div>
+      </section>
+      <section class="data-section" data-component="EnemyPackageComponentData">
+        <div class="section-heading">
+          <p class="section-index">11</p>
+          <h2 data-i18n="enemyPackageComponentData">EnemyPackageComponentData（敌人包裹数据）</h2>
+          <button class="collapse-toggle" type="button" aria-expanded="true" data-i18n="collapse">折叠</button>
+          <span class="section-note">EnemyPackageComponentData</span>
+        </div>
+        <div class="section-body"><div id="enemy-package-component-data-content"></div></div>
+      </section>
+      <section class="data-section" data-component="ExplosiveComponentData">
+        <div class="section-heading">
+          <p class="section-index">12</p>
+          <h2 data-i18n="explosiveComponentData">ExplosiveComponentData（爆炸物数据）</h2>
+          <button class="collapse-toggle" type="button" aria-expanded="true" data-i18n="collapse">折叠</button>
+          <span class="section-note">ExplosiveComponentData</span>
+        </div>
+        <div class="section-body"><div id="explosive-component-data-content"></div></div>
+      </section>
+      <section class="data-section" data-component="FactionComponentData">
+        <div class="section-heading">
+          <p class="section-index">13</p>
+          <h2 data-i18n="factionComponentData">FactionComponentData（阵营数据）</h2>
+          <button class="collapse-toggle" type="button" aria-expanded="true" data-i18n="collapse">折叠</button>
+          <span class="section-note">FactionComponentData</span>
+        </div>
+        <div class="section-body"><div id="faction-component-data-content"></div></div>
+      </section>
+      <section class="data-section" data-component="InventoryComponentData">
+        <div class="section-heading">
+          <p class="section-index">14</p>
+          <h2 data-i18n="inventoryComponentData">InventoryComponentData（装备库存数据）</h2>
+          <button class="collapse-toggle" type="button" aria-expanded="true" data-i18n="collapse">折叠</button>
+          <span class="section-note">InventoryComponentData</span>
+        </div>
+        <div class="section-body"><div id="inventory-component-data-content"></div></div>
+      </section>
+      <section class="data-section" data-component="LoadoutPackageComponentData">
+        <div class="section-heading">
+          <p class="section-index">15</p>
+          <h2 data-i18n="loadoutPackageComponentData">LoadoutPackageComponentData（加载包裹数据）</h2>
+          <button class="collapse-toggle" type="button" aria-expanded="true" data-i18n="collapse">折叠</button>
+          <span class="section-note">LoadoutPackageComponentData</span>
+        </div>
+        <div class="section-body"><div id="loadout-package-component-data-content"></div></div>
+      </section>
+      <section class="data-section" data-component="ProjectileWeaponComponentData">
+        <div class="section-heading">
+          <p class="section-index">16</p>
+          <h2 data-i18n="projectileWeaponComponentData">ProjectileWeaponComponentData（射弹武器数据）</h2>
+          <button class="collapse-toggle" type="button" aria-expanded="true" data-i18n="collapse">折叠</button>
+          <span class="section-note">ProjectileWeaponComponentData</span>
+        </div>
+        <div class="section-body"><div id="projectile-weapon-component-data-content"></div></div>
+      </section>
+      <section class="data-section" data-component="WeaponChargeComponentData">
+        <div class="section-heading">
+          <p class="section-index">17</p>
+          <h2 data-i18n="weaponChargeComponentData">WeaponChargeComponentData（武器充能数据）</h2>
+          <button class="collapse-toggle" type="button" aria-expanded="true" data-i18n="collapse">折叠</button>
+          <span class="section-note">WeaponChargeComponentData</span>
+        </div>
+        <div class="section-body"><div id="weapon-charge-component-data-content"></div></div>
+      </section>
+      <section class="data-section" data-component="WeaponDataComponentData">
+        <div class="section-heading">
+          <p class="section-index">18</p>
+          <h2 data-i18n="weaponDataComponentData">WeaponDataComponentData（武器数据）</h2>
+          <button class="collapse-toggle" type="button" aria-expanded="true" data-i18n="collapse">折叠</button>
+          <span class="section-note">WeaponDataComponentData</span>
+        </div>
+        <div class="section-body"><div id="weapon-data-component-data-content"></div></div>
+      </section>
+      <section class="data-section" data-component="WeaponHeatComponentData">
+        <div class="section-heading">
+          <p class="section-index">19</p>
+          <h2 data-i18n="weaponHeatComponentData">WeaponHeatComponentData（武器热量数据）</h2>
+          <button class="collapse-toggle" type="button" aria-expanded="true" data-i18n="collapse">折叠</button>
+          <span class="section-note">WeaponHeatComponentData</span>
+        </div>
+        <div class="section-body"><div id="weapon-heat-component-data-content"></div></div>
+      </section>
+      <section class="data-section" data-component="WeaponMagazineComponentData">
+        <div class="section-heading">
+          <p class="section-index">20</p>
+          <h2 data-i18n="weaponMagazineComponentData">WeaponMagazineComponentData（武器弹匣数据）</h2>
+          <button class="collapse-toggle" type="button" aria-expanded="true" data-i18n="collapse">折叠</button>
+          <span class="section-note">WeaponMagazineComponentData</span>
+        </div>
+        <div class="section-body"><div id="weapon-magazine-component-data-content"></div></div>
+      </section>
+      <section class="data-section" data-component="HellpodRackComponentData">
+        <div class="section-heading">
+          <p class="section-index">21</p>
+          <h2 data-i18n="hellpodRackComponentData">HellpodRackComponentData（地狱空投仓负载数据）</h2>
+          <button class="collapse-toggle" type="button" aria-expanded="true" data-i18n="collapse">折叠</button>
+          <span class="section-note">HellpodRackComponentData</span>
+        </div>
+        <div class="section-body"><div id="hellpod-rack-component-data-content"></div></div>
+      </section>
+      <section class="data-section" data-component="MeleeWeaponComponentData">
+        <div class="section-heading">
+          <p class="section-index">22</p>
+          <h2 data-i18n="meleeWeaponComponentData">MeleeWeaponComponentData（近战武器数据）</h2>
+          <button class="collapse-toggle" type="button" aria-expanded="true" data-i18n="collapse">折叠</button>
+          <span class="section-note">MeleeWeaponComponentData</span>
+        </div>
+        <div class="section-body"><div id="melee-weapon-component-data-content"></div></div>
+      </section>
+      <section class="data-section" data-component="ShieldComponentData">
+        <div class="section-heading">
+          <p class="section-index">23</p>
+          <h2 data-i18n="shieldComponentData">ShieldComponentData（护盾数据）</h2>
+          <button class="collapse-toggle" type="button" aria-expanded="true" data-i18n="collapse">折叠</button>
+          <span class="section-note">ShieldComponentData</span>
+        </div>
+        <div class="section-body"><div id="shield-component-data-content"></div></div>
+      </section>
+      <section class="data-section" data-component="SprayWeaponComponentData">
+        <div class="section-heading">
+          <p class="section-index">24</p>
+          <h2 data-i18n="sprayWeaponComponentData">SprayWeaponComponentData（射流武器数据）</h2>
+          <button class="collapse-toggle" type="button" aria-expanded="true" data-i18n="collapse">折叠</button>
+          <span class="section-note">SprayWeaponComponentData</span>
+        </div>
+        <div class="section-body"><div id="spray-weapon-component-data-content"></div></div>
+      </section>
+      <section class="data-section" data-component="ThrowableComponentData">
+        <div class="section-heading">
+          <p class="section-index">25</p>
+          <h2 data-i18n="throwableComponentData">ThrowableComponentData（投掷物数据）</h2>
+          <button class="collapse-toggle" type="button" aria-expanded="true" data-i18n="collapse">折叠</button>
+          <span class="section-note">ThrowableComponentData</span>
+        </div>
+        <div class="section-body"><div id="throwable-component-data-content"></div></div>
+      </section>
+      <section class="data-section" data-component="TurretComponentData">
+        <div class="section-heading">
+          <p class="section-index">26</p>
+          <h2 data-i18n="turretComponentData">TurretComponentData（炮塔数据）</h2>
+          <button class="collapse-toggle" type="button" aria-expanded="true" data-i18n="collapse">折叠</button>
+          <span class="section-note">TurretComponentData</span>
+        </div>
+        <div class="section-body"><div id="turret-component-data-content"></div></div>
+      </section>
+      <section class="data-section" data-component="WeaponReloadComponentData">
+        <div class="section-heading">
+          <p class="section-index">27</p>
+          <h2 data-i18n="weaponReloadComponentData">WeaponReloadComponentData（武器换弹数据）</h2>
+          <button class="collapse-toggle" type="button" aria-expanded="true" data-i18n="collapse">折叠</button>
+          <span class="section-note">WeaponReloadComponentData</span>
+        </div>
+        <div class="section-body"><div id="weapon-reload-component-data-content"></div></div>
+      </section>
+      <section class="data-section" data-component="WeaponRoundsComponentData">
+        <div class="section-heading">
+          <p class="section-index">28</p>
+          <h2 data-i18n="weaponRoundsComponentData">WeaponRoundsComponentData（散发供弹数据）</h2>
+          <button class="collapse-toggle" type="button" aria-expanded="true" data-i18n="collapse">折叠</button>
+          <span class="section-note">WeaponRoundsComponentData</span>
+        </div>
+        <div class="section-body"><div id="weapon-rounds-component-data-content"></div></div>
+      </section>
+      <section class="data-section" data-component="MinefieldComponentData">
+        <div class="section-heading">
+          <p class="section-index">29</p>
+          <h2 data-i18n="minefieldComponentData">MinefieldComponentData（地雷数据）</h2>
+          <button class="collapse-toggle" type="button" aria-expanded="true" data-i18n="collapse">折叠</button>
+          <span class="section-note">MinefieldComponentData</span>
+        </div>
+        <div class="section-body"><div id="minefield-component-data-content"></div></div>
+      </section>
+      <section class="data-section" data-component="OrbitalAbilityComponentData">
+        <div class="section-heading">
+          <p class="section-index">30</p>
+          <h2 data-i18n="orbitalAbilityComponentData">OrbitalAbilityComponentData（轨道能力数据）</h2>
+          <button class="collapse-toggle" type="button" aria-expanded="true" data-i18n="collapse">折叠</button>
+          <span class="section-note">OrbitalAbilityComponentData</span>
+        </div>
+        <div class="section-body"><div id="orbital-ability-component-data-content"></div></div>
+      </section>
+      <section class="data-section" data-component="SensorDangerComponentData" data-component-any="SensorDangerComponentData,SensorEarComponentData,SensorEyeComponentData">
+        <div class="section-heading">
+          <p class="section-index">31</p>
+          <h2 data-i18n="sensorComponents">Sensor(Danger / Ear / Eye)ComponentData（感知数据）</h2>
+          <button class="collapse-toggle" type="button" aria-expanded="true" data-i18n="collapse">折叠</button>
+          <span class="section-note">SensorDanger / Ear / Eye</span>
+        </div>
+        <div class="section-body">
+          <div id="sensor-component-data-content">
+            <div data-sensor="SensorDangerComponentData"></div>
+            <div data-sensor="SensorEarComponentData"></div>
+            <div data-sensor="SensorEyeComponentData"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+    </div>
+    </div>
+
+    <div id="raw-view" class="raw-view" hidden></div>
+  </main>
+
+  <footer>FOR SUPER EARTH // LOCAL ARCHIVE</footer>
+  <script src="js/site-config.js"></script>
+  <script src="js/core.js"></script>
+  <script src="js/components/HealthComponentData.js"></script>
+  <script src="js/components/HitReactComponentData.js"></script>
+  <script src="js/components/StatusEffectReceiverComponentData.js"></script>
+  <script src="js/components/MountComponentData.js"></script>
+  <script src="js/components/ArcWeaponComponentData.js"></script>
+  <script src="js/components/BeamWeaponComponentData.js"></script>
+  <script src="js/components/BombardmentComponentData.js"></script>
+  <script src="js/components/DamageZoneShieldComponentData.js"></script>
+  <script src="js/components/DepositComponentData.js"></script>
+  <script src="js/components/EagleComponentData.js"></script>
+  <script src="js/components/EnemyPackageComponentData.js"></script>
+  <script src="js/components/ExplosiveComponentData.js"></script>
+  <script src="js/components/FactionComponentData.js"></script>
+  <script src="js/components/InventoryComponentData.js"></script>
+  <script src="js/components/LoadoutPackageComponentData.js"></script>
+  <script src="js/components/ProjectileWeaponComponentData.js"></script>
+  <script src="js/components/WeaponChargeComponentData.js"></script>
+  <script src="js/components/WeaponDataComponentData.js"></script>
+  <script src="js/components/WeaponHeatComponentData.js"></script>
+  <script src="js/components/WeaponMagazineComponentData.js"></script>
+  <script src="js/components/HellpodRackComponentData.js"></script>
+  <script src="js/components/MeleeWeaponComponentData.js"></script>
+  <script src="js/components/ShieldComponentData.js"></script>
+  <script src="js/components/SprayWeaponComponentData.js"></script>
+  <script src="js/components/ThrowableComponentData.js"></script>
+  <script src="js/components/TurretComponentData.js"></script>
+  <script src="js/components/WeaponReloadComponentData.js"></script>
+  <script src="js/components/WeaponRoundsComponentData.js"></script>
+  <script src="js/components/MinefieldComponentData.js"></script>
+  <script src="js/components/OrbitalAbilityComponentData.js"></script>
+  <script src="js/components/SensorComponents.js"></script>
+  <script src="js/registry.js"></script>
+  <script src="js/data-chain.js"></script>
+  <script src="js/raw-viewer.js"></script>
+  <script src="js/runtime.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
